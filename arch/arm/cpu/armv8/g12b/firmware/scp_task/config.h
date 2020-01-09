@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/txl/firmware/scp_task/config.h
+ * arch/arm/cpu/armv8/g12b/firmware/scp_task/config.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *

@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/txl/firmware/scp_task/user_task.c
+ * arch/arm/cpu/armv8/tm2/firmware/scp_task/user_task.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *

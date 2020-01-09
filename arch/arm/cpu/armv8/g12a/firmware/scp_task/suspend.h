@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/txl/firmware/scp_task/suspend.h
+ * arch/arm/cpu/armv8/g12a/firmware/scp_task/suspend.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *

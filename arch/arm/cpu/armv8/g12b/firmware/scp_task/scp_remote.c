@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/txl/firmware/scp_task/scp_remote.c
+ * arch/arm/cpu/armv8/g12b/firmware/scp_task/scp_remote.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
