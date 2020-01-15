@@ -4,11 +4,11 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "g12a"
+	default "kvim3l"
 
 config SYS_VENDOR
 	string
-	default "generic"
+	default "khadas"
 
 config SYS_SOC
 	string

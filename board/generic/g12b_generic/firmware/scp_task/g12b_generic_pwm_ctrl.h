@@ -1,5 +1,5 @@
 /*
-*board/generic/g12a/firmware/scp_task/pwm_ctrl.h
+*board/generic/g12b_generic/firmware/scp_task/g12b_generic_pwm_ctrl.h
 *table for Dynamic Voltage/Frequency Scaling
 */
 #ifndef __PWM_CTRL_H__

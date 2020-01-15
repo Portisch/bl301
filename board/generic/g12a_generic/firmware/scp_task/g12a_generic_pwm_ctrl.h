@@ -1,7 +1,7 @@
 /*
- * board/khadas/kvim3/firmware/scp_task/pwm_ctrl.h
- * table for Dynamic Voltage/Frequency Scaling
- */
+*board/generic/g12a_generic/firmware/scp_task/g12a_generic_pwm_ctrl.h
+*table for Dynamic Voltage/Frequency Scaling
+*/
 #ifndef __PWM_CTRL_H__
 #define __PWM_CTRL_H__
 
