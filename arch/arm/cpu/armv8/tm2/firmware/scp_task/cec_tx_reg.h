@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/g12b/firmware/scp_task/cec_tx_reg.h
+ * arch/arm/cpu/armv8/tm2/firmware/scp_task/cec_tx_reg.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -26,7 +26,7 @@
 #define CONFIG_CEC_OSD_NAME "AML_TV"
 #endif
 
-#define CEC_VERSION "cec ver:2018/04/29"
+#define CEC_VERSION "cec ver:2018/12/26"
 
 /* FOR AO_CECB */
 #define DWC_CECB_CTRL                0x00
@@ -158,9 +158,6 @@
 #define ONE_TOUCH_PLAY_MASK                  1
 #define ONE_TOUCH_STANDBY_MASK               2
 #define AUTO_POWER_ON_MASK                   3
-#define STREAMPATH_POWER_ON_MASK             4
-#define CEC_INPUT_MASK                       5
-#define ACTIVE_SOURCE_MASK                   6
 
 //#define P_HHI_GCLK_MPEG2 CBUS_REG_ADDR(HHI_GCLK_MPEG2)
 //#define P_HHI_HDMI_CLK_CNTL CBUS_REG_ADDR(HHI_HDMI_CLK_CNTL)

@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/g12b/firmware/scp_task/data.h
+ * arch/arm/cpu/armv8/txl/firmware/scp_task/lib/string.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,18 +19,21 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "config.h"
+void *memcpy(void *dest, const void *src, unsigned int count)
+{
+	char *tmp = dest;
+	const char *s = src;
 
-#define TASK_COMMAND_OFFSET 0
-#define TASK_RESPONSE_OFFSET  0x200
+	while (count--)
+		*tmp++ = *s++;
+	return dest;
+}
+void *memset(void *s, int c, unsigned int count)
+{
+	char *xs = s;
 
-unsigned char
-	*secure_task_share_mem = (unsigned char *)SECURE_TASK_SHARE_MEM_BASE;
-unsigned char *high_task_share_mem = (unsigned char *)HIGH_TASK_SHARE_MEM_BASE;
-unsigned char *low_task_share_mem = (unsigned char *)LOW_TASK_SHARE_MEM_BASE;
+	while (count--)
+		*xs++ = c;
+	return s;
+}
 
-struct resume_param {
-/* wakeup method: remote, ..., */
-	unsigned int method;
-};
-struct resume_param resume_data;

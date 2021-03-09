@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/g12b/firmware/scp_task/scp_remote.c
+ * arch/arm/cpu/armv8/tm2/firmware/scp_task/scp_remote.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -28,10 +28,7 @@
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0
 #endif
 #define CONFIG_END 0xffffffff
-
-extern struct config_value_uint usr_pwr_key;
-extern struct config_value_uint usr_ir_proto;
-extern struct config_value_uint usr_pwr_key_mask;
+#define IR_POWER_KEY_MASK 0xffffffff
 
 typedef struct reg_remote {
 	int reg;
@@ -44,10 +41,11 @@ typedef struct remote_pwrkeys {
 }remote_pwrkeys_t;
 
 remote_pwrkeys_t pwr_keys_list;
+unsigned int usr_pwr_key = 0xffffffff;
 
 //24M
 static const reg_remote RDECODEMODE_NEC[] = {
-	{AO_MF_IR_DEC_LDR_ACTIVE, 500 << 16 | 202 << 0},
+	{AO_MF_IR_DEC_LDR_ACTIVE, 500 << 16 | 400 << 0},
 	{AO_MF_IR_DEC_LDR_IDLE, 300 << 16 | 202 << 0},
 	{AO_MF_IR_DEC_LDR_REPEAT, 150 << 16 | 80 << 0},
 	{AO_MF_IR_DEC_BIT_0, 72 << 16 | 40 << 0},
@@ -108,7 +106,7 @@ static const reg_remote RDECODEMODE_RCA[] = {
 
 static const reg_remote RDECODEMODE_NEC_TOSHIBA_2IN1[] = {
 	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
 	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
 	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
 	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
@@ -131,7 +129,7 @@ static const reg_remote RDECODEMODE_NEC_TOSHIBA_2IN1[] = {
 
 static const reg_remote RDECODEMODE_NEC_RCA_2IN1[] = {
 	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
 	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
 	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
 	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
@@ -178,125 +176,14 @@ static const reg_remote RDECODEMODE_RCMM[] = {
 	{CONFIG_END,            0      }
 };
 
-static const reg_remote RDECODEMODE_RC5[] = {
-	{ AO_MF_IR_DEC_LDR_ACTIVE ,  0            },
-	{ AO_MF_IR_DEC_LDR_IDLE   ,  0            },
-	{ AO_MF_IR_DEC_LDR_REPEAT ,  0            },
-	{ AO_MF_IR_DEC_BIT_0      ,  0            },
-	{ AO_MF_IR_DEC_REG0       ,  ((3 << 28) | (0x1644 << 12) | 0x13)},
-	{ AO_MF_IR_DEC_STATUS     ,  (1 << 30)    },
-	{ AO_MF_IR_DEC_REG1       ,  ((1 << 15) | (13 << 8))},
-	/*bit[0-3]: RC5; bit[8]: MSB first mode; bit[11]: compare frame method*/
-	{ AO_MF_IR_DEC_REG2       ,  ((1 << 13) | (1 << 11) | (1 << 8) | 0x7)},
-	/*Half bit for RC5 format: 888.89us*/
-	{ AO_MF_IR_DEC_DURATN2    ,  ((56 << 16) | (32 << 0))  },
-	/*RC5 typically 1777.78us for whole bit*/
-	{ AO_MF_IR_DEC_DURATN3    ,  ((102 << 16) | (76 << 0))  },
-	{ AO_MF_IR_DEC_REG3       ,  0			 },
-	{CONFIG_END, 0}
-};
-
-static const reg_remote RDECODEMODE_RC6[] = {
-	{AO_MF_IR_DEC_LDR_ACTIVE, ((unsigned)210 << 16) | ((unsigned)120 << 0)},    // rc6 leader 2666us,20* timebase
-	{AO_MF_IR_DEC_LDR_IDLE, 55 << 16 | 38 << 0},                                // leader idle 889us
-	{AO_MF_IR_DEC_LDR_REPEAT, 145 << 16 | 125 << 0},                            // leader repeat
-	{AO_MF_IR_DEC_BIT_0, 51 << 16 | 38 << 0},                                   // logic '0' or '00' 889us
-	{AO_MF_IR_DEC_REG0, (3 << 28) | (0xFA0 << 12) | 0x13},                      // sys clock boby time.base time = 20 body frame
-	{AO_MF_IR_DEC_STATUS, (94  << 20) | (82 << 10)},                            // logic '1' or '01' 1778us
-	{AO_MF_IR_DEC_REG1, ((1 << 15) | (20 << 8) | (1 << 6))},                    // frame len = 21bit
-	{AO_MF_IR_DEC_REG2, (1 << 8) | 0x9},                                        // rc6 protocol
-	{AO_MF_IR_DEC_DURATN2, (28 << 16) | (16 << 0)},                             // short bit pulse 444us
-	{AO_MF_IR_DEC_DURATN3, (51 << 16) | (38 << 0)},                             // long bit pulse 889us,
-	{CONFIG_END, 0}
-};
-
-static const reg_remote RDECODEMODE_RC6A[] = {
-	{AO_MF_IR_DEC_LDR_ACTIVE, ((unsigned)210 << 16) | ((unsigned)120 << 0)},    // rc6 leader 2666us,20* timebase
-	{AO_MF_IR_DEC_LDR_IDLE, 55 << 16 | 38 << 0},                                // leader idle 889us
-	{AO_MF_IR_DEC_LDR_REPEAT, 145 << 16 | 125 << 0},                            // leader repeat
-	{AO_MF_IR_DEC_BIT_0, 51 << 16 | 38 << 0},                                   // logic '0' or '00' 889us
-	{AO_MF_IR_DEC_REG0, (3 << 28) | (0xFA0 << 12) | 0x13},                      // sys clock boby time.base time = 20 body frame
-	{AO_MF_IR_DEC_STATUS, (94  << 20) | (82 << 10)},                            // logic '1' or '01' 1778us
-	{AO_MF_IR_DEC_REG1, ((1 << 15) | (36 << 8) | (1 << 6))},                    // frame len = 37bit
-	{AO_MF_IR_DEC_REG2, (1 << 8) | 0x9},                                        // rc6 protocol
-	{AO_MF_IR_DEC_DURATN2, (28 << 16) | (16 << 0)},                             // short bit pulse 444us
-	{AO_MF_IR_DEC_DURATN3, (51 << 16) | (38 << 0)},                             // long bit pulse 889us
-	{CONFIG_END, 0}
-};
-
-static const reg_remote RDECODEMODE_NEC_RC5_2IN1[] = {
-	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
-	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
-	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
-	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
-	{AO_IR_DEC_REG0, 3<<28|(0xFA0<<12)|0x13},/*20us body 108ms*/
-	{AO_IR_DEC_STATUS, (134<<20)|(90<<10)},/*logic'1'or'01'*/
-	{AO_IR_DEC_REG1, 0xbe10},/*boby long decode (9-13)*/
-	/*used new decode for rc5*/
-	{ AO_MF_IR_DEC_LDR_ACTIVE ,  0            },
-	{ AO_MF_IR_DEC_LDR_IDLE   ,  0            },
-	{ AO_MF_IR_DEC_LDR_REPEAT ,  0            },
-	{ AO_MF_IR_DEC_BIT_0      ,  0            },
-	{ AO_MF_IR_DEC_REG0       ,  ((3 << 28) | (0x1644 << 12) | 0x13)},
-	{ AO_MF_IR_DEC_STATUS     ,  (1 << 30)    },
-	{ AO_MF_IR_DEC_REG1       ,  ((1 << 15) | (13 << 8))},
-	/*bit[0-3]: RC5; bit[8]: MSB first mode; bit[11]: compare frame method*/
-	{ AO_MF_IR_DEC_REG2       ,  ((1 << 13) | (1 << 11) | (1 << 8) | 0x7)},
-	/*Half bit for RC5 format: 888.89us*/
-	{ AO_MF_IR_DEC_DURATN2    ,  ((56 << 16) | (32 << 0))  },
-	/*RC5 typically 1777.78us for whole bit*/
-	{ AO_MF_IR_DEC_DURATN3    ,  ((102 << 16) | (76 << 0))  },
-	{ AO_MF_IR_DEC_REG3       ,  0			 },
-	{CONFIG_END, 0}
-};
-
-static const reg_remote RDECODEMODE_NEC_RC6_2IN1[] = {
-	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
-	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
-	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
-	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
-	{AO_IR_DEC_REG0, 3<<28|(0xFA0<<12)|0x13},/*20us body 108ms*/
-	{AO_IR_DEC_STATUS, (134<<20)|(90<<10)},/*logic'1'or'01'*/
-	{AO_IR_DEC_REG1, 0xbe10},/*boby long decode (9-13)*/
-	/*used new decode for rc6*/
-	{AO_MF_IR_DEC_LDR_ACTIVE, ((unsigned)210 << 16) | ((unsigned)125 << 0)},//rc6 leader 1700us,20* timebase
-	{AO_MF_IR_DEC_LDR_IDLE, 50 << 16 | 38 << 0},	// leader idle 800us
-	{AO_MF_IR_DEC_LDR_REPEAT, 145 << 16 | 125 << 0},	// leader repeat
-	{AO_MF_IR_DEC_BIT_0, 51 << 16 | 38 << 0},	// logic '0' or '00' 1500us
-	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},	// sys clock boby time.base time = 20 body frame
-	{AO_MF_IR_DEC_STATUS, (94  << 20) | (82 << 10)},	// logic '1' or '01'    2500us
-	{AO_MF_IR_DEC_REG1, 0xa440},	// boby long decode (8-13) //framn len = 24bit
-	/*it may get the wrong customer value and key value from register if the value is set to 0x4,so the register value must set to 0x104 */
-	{AO_MF_IR_DEC_REG2, 0x109},
-	{AO_MF_IR_DEC_DURATN2, ((28 << 16) | (16 << 0))},
-	{AO_MF_IR_DEC_DURATN3, ((51 << 16) | (38 << 0))},
-	{CONFIG_END, 0}
-};
-
-static const reg_remote RDECODEMODE_SOFTWARE_DECODE[] = {
-	{AO_MF_IR_DEC_BIT_0, 68 << 16 | 44 << 0},
-	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},
-	{AO_MF_IR_DEC_REG1, 0xdf44},
-	{AO_MF_IR_DEC_REG2, 0x2},
-	{CONFIG_END, 0}
-};
-
 static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_NEC,
 	RDECODEMODE_DUOKAN,
 	RDECODEMODE_TOSHIBA,
 	RDECODEMODE_RCA,
-	RDECODEMODE_RC5,
-	RDECODEMODE_RC6A,
 	RDECODEMODE_NEC_TOSHIBA_2IN1,
 	RDECODEMODE_NEC_RCA_2IN1,
 	RDECODEMODE_RCMM,
-	RDECODEMODE_NEC_RC5_2IN1,
-	RDECODEMODE_NEC_RC6_2IN1,
-	RDECODEMODE_RC6,
-	RDECODEMODE_SOFTWARE_DECODE
 };
 
 void setremotereg(const reg_remote * r)
@@ -335,9 +222,9 @@ unsigned bakeuAO_IR_DEC_LDR_REPEAT;
 **
 ********************************************************************/
 #if 1
-static void backup_remote_register(void)
+void backuremote_register(void)
 {
-	backuAO_RTI_PIN_MUX_REG = readl(AO_RTI_PIN_MUX_REG);
+	backuAO_RTI_PIN_MUX_REG = readl(AO_RTI_PINMUX_REG0);
 	backuAO_IR_DEC_REG0 = readl(AO_MF_IR_DEC_REG0);
 	backuAO_IR_DEC_REG1 = readl(AO_MF_IR_DEC_REG1);
 	backuAO_IR_DEC_LDR_ACTIVE = readl(AO_MF_IR_DEC_LDR_ACTIVE);
@@ -346,9 +233,9 @@ static void backup_remote_register(void)
 	bakeuAO_IR_DEC_LDR_REPEAT = readl(AO_MF_IR_DEC_LDR_REPEAT);
 }
 
-static void restore_remote_register(void)
+void resume_remote_register(void)
 {
-	writel(backuAO_RTI_PIN_MUX_REG, AO_RTI_PIN_MUX_REG);
+	writel(backuAO_RTI_PIN_MUX_REG, AO_RTI_PINMUX_REG0);
 	writel(backuAO_IR_DEC_REG0, AO_MF_IR_DEC_REG0);
 	writel(backuAO_IR_DEC_REG1, AO_MF_IR_DEC_REG1);
 	writel(backuAO_IR_DEC_LDR_ACTIVE, AO_MF_IR_DEC_LDR_ACTIVE);
@@ -361,23 +248,17 @@ static void restore_remote_register(void)
 static int ir_remote_init_32k_mode(void)
 {
 	//volatile unsigned int status,data_value;
-	int val = readl(AO_RTI_PIN_MUX_REG);
-	writel((val | (1 << 0)), AO_RTI_PIN_MUX_REG);
-	set_remote_mode(usr_ir_proto.val);
-	uart_puts("set_remote_mode 0x");
-	uart_put_hex(usr_ir_proto.val, 8);
-	uart_puts("\n");
+	int val = readl(AO_RTI_PINMUX_REG0);
+	writel((val | (1 << 20)), AO_RTI_PINMUX_REG0);
+	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
 	readl(AO_MF_IR_DEC_STATUS);
 	//data_value = readl(AO_MF_IR_DEC_FRAME);
 	readl(AO_MF_IR_DEC_FRAME);
 
-#if 0
 	//step 2 : request nec_remote irq  & enable it
-	if (usr_ir_proto.val == 3) {
-		uart_puts("usr_ir_proto 3\n");
-		writel(readl(AO_IR_DEC_REG1)&(~(1<<15)),AO_IR_DEC_REG1);
-	}
+#if CONFIG_IR_REMOTE_USE_PROTOCOL == 3
+	writel(readl(AO_IR_DEC_REG1)&(~(1<<15)),AO_IR_DEC_REG1);
 #endif
 	return 0;
 }
@@ -389,42 +270,23 @@ void init_custom_trigger(void)
 #endif
 
 static unsigned int kk[] = {
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL5
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL5,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL6
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL6,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL7
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL7,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL8
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL8,
-#endif
-#ifdef CONFIG_IR_REMOTE_POWER_UP_KEY_VAL9
 	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL9,
-#endif
 };
 
 static int init_remote(void)
 {
 	uart_put_hex(readl(AO_IR_DEC_STATUS), 32);
-	uart_puts("\n");
 	uart_put_hex(readl(AO_IR_DEC_FRAME), 32);
-	uart_puts("\n");
 	init_custom_trigger();
+
 	return 0;
 }
 
@@ -465,13 +327,14 @@ static int remote_detect_key(void)
 		uart_puts("\n");
 
 		for (j = 0; j < keysdat->size; j++) {
-			if ((power_key & usr_pwr_key_mask.val) == (keysdat->pwrkeys[j] & usr_pwr_key_mask.val))
+			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
 				return 1;
 		}
-		if ((power_key & usr_pwr_key_mask.val) == (usr_pwr_key.val & usr_pwr_key_mask.val))
+		if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
 			return 2;
 	}
 
+#ifdef CONFIG_COMPAT_IR
 	if (((readl(AO_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
 		if (readl(AO_IR_DEC_STATUS) & 0x1) { /*to judge the frame whether is repeat frame or not*/
 			readl(AO_IR_DEC_FRAME);
@@ -484,12 +347,13 @@ static int remote_detect_key(void)
 		uart_puts("\n");
 
 		for (j = 0; j < keysdat->size; j++) {
-			if ((power_key & usr_pwr_key_mask.val) == (keysdat->pwrkeys[j] & usr_pwr_key_mask.val))
+			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
 				return 1;
 		}
-		if ((power_key & usr_pwr_key_mask.val) == (usr_pwr_key.val & usr_pwr_key_mask.val))
+		if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
 			return 2;
 	}
+#endif
 
 	return 0;
 

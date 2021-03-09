@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/g12b/firmware/scp_task/data.h
+ * arch/arm/cpu/armv8/txl/firmware/scp_task/lib/delay.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,18 +19,17 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "config.h"
+#define P_AO_TIMER_E		(*((volatile unsigned *)(0xff800000 + (0xf9 << 2))))
+unsigned int get_time(void)
+{
+	return P_AO_TIMER_E;
+}
 
-#define TASK_COMMAND_OFFSET 0
-#define TASK_RESPONSE_OFFSET  0x200
+void _udelay(unsigned int us)
+{
+	unsigned int t0 = get_time();
 
-unsigned char
-	*secure_task_share_mem = (unsigned char *)SECURE_TASK_SHARE_MEM_BASE;
-unsigned char *high_task_share_mem = (unsigned char *)HIGH_TASK_SHARE_MEM_BASE;
-unsigned char *low_task_share_mem = (unsigned char *)LOW_TASK_SHARE_MEM_BASE;
+	while (get_time() - t0 <= us)
+		;
+}
 
-struct resume_param {
-/* wakeup method: remote, ..., */
-	unsigned int method;
-};
-struct resume_param resume_data;

@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/g12b/firmware/scp_task/user_task.c
+ * arch/arm/cpu/armv8/tm2/firmware/scp_task/user_task.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -41,32 +41,32 @@ enum scpi_client_id {
 
 void __switch_idle_task(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_IDLE;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_IDLE;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 void __switch_back_securemb(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_SECURE_MB;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_SECURE_MB;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 void __switch_back_highmb(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_HIGH_MB;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_HIGH_MB;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 
 void __switch_back_lowmb(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_LOW_MB;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_LOW_MB;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 
 void secure_task(void)
@@ -81,7 +81,7 @@ void secure_task(void)
 
 	/*init bss */
 	bss_init();
-	dbg_prints("CoreELEC secure task start!\n");
+	uart_puts("secure task start!\n");
 
 	/* suspend pwr ops init*/
 	suspend_pwr_ops_init();
@@ -91,7 +91,7 @@ void secure_task(void)
 		/* do secure task process */
 		command = *pcommand;
 		if (command) {
-			dbg_print("CoreELEC: process command ", command);
+			dbg_print("process command ", command);
 			if (command == SEC_TASK_GET_WAKEUP_SRC) {
 				state = *(pcommand+1);
 				suspend_get_wakeup_source(
@@ -129,7 +129,7 @@ void high_task(void)
 	    (unsigned *)(&(high_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned command;
 
-	dbg_prints("CoreELEC high task start!\n");
+	dbg_prints("high task start!\n");
 	*pcommand = 0;
 
 	while (1) {
@@ -145,9 +145,9 @@ void high_task(void)
 	}
 }
 
+extern unsigned int usr_pwr_key;
 void process_low_task(unsigned command)
 {
-#if 0
 	unsigned *pcommand =
 	    (unsigned *)(&(low_task_share_mem[TASK_COMMAND_OFFSET]));
 	/*unsigned *response =
@@ -159,7 +159,6 @@ void process_low_task(unsigned command)
 			dbg_print("pwr_key=",usr_pwr_key);
 		}
 	}
-#endif
 }
 
 void low_task(void)
@@ -171,7 +170,7 @@ void low_task(void)
 	unsigned command;
 
 	*pcommand = 0;
-	dbg_prints("CoreELEC low task start!\n");
+	dbg_prints("low task start!\n");
 
 	while (1) {
 		/* do low task process */

@@ -116,6 +116,7 @@ void enter_suspend(unsigned int suspend_from)
 		p_pwr_op->power_off_at_24M();
 
 	gxbb_com_gate_off();
+
 	if (p_pwr_op->power_off_at_32k)
 		p_pwr_op->power_off_at_32k();
 
